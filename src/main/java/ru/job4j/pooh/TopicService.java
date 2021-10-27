@@ -4,26 +4,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class TopicService implements Service {
-    ConcurrentHashMap<String, ConcurrentHashMap<String, ConcurrentLinkedQueue<String>>> users = new ConcurrentHashMap<>();
+    ConcurrentHashMap<String, ConcurrentHashMap<String, ConcurrentLinkedQueue<String>>> topics = new ConcurrentHashMap<>();
 
     @Override
     public Resp process(Req req) {
         Resp result = new Resp("No data available", "204");
         if ("POST".equals(req.getHttpRequestType())) {
-            for (var user : users.keySet()) {
-                ConcurrentHashMap<String, ConcurrentLinkedQueue<String>> userMap = users.get(user);
-                ConcurrentLinkedQueue<String> userSource = userMap.get(req.getSourceName());
-                if (userSource != null) {
-                    userSource.offer(req.getParam());
+            ConcurrentHashMap<String, ConcurrentLinkedQueue<String>> topicMap = topics.get(req.getSourceName());
+            if (topicMap != null) {
+                for (var consumer : topicMap.keySet()) {
+                    topicMap.get(consumer).offer(req.getParam());
                 }
+                result = new Resp("Add to all available " + req.getSourceName()
+                        + " value = " + req.getParam(), "200");
             }
-            result = new Resp("Add to all available " + req.getSourceName()
-                    + " value = " + req.getParam(), "200");
         } else if ("GET".equals(req.getHttpRequestType())) {
-            users.putIfAbsent(req.getParam(), new ConcurrentHashMap<>());
-            ConcurrentHashMap<String, ConcurrentLinkedQueue<String>> userMap = users.get(req.getParam());
-            userMap.putIfAbsent(req.getSourceName(), new ConcurrentLinkedQueue<>());
-            String text = userMap.get(req.getSourceName()).poll();
+            topics.putIfAbsent(req.getSourceName(), new ConcurrentHashMap<>());
+            ConcurrentHashMap<String, ConcurrentLinkedQueue<String>> topicMap = topics.get(req.getSourceName());
+            topicMap.putIfAbsent(req.getParam(), new ConcurrentLinkedQueue<>());
+            String text = topicMap.get(req.getParam()).poll();
             if (text != null) {
                 result = new Resp(text, "200");
             }

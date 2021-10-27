@@ -150,4 +150,28 @@ public class TopicServiceTest {
         assertThat(res1Sub2.getText(), is("No data available"));
         assertThat(res2Sub2.getText(), is("temperature=25"));
     }
+
+    @Test
+    public void whenPostInEmptyServiceThenCode204() {
+        TopicService topicService = new TopicService();
+        String paramForPublisher = "temperature=18";
+        Resp result = topicService.process(
+                new Req("POST", "topic", "weather", paramForPublisher)
+        );
+        assertThat(result.getStatus(), is("204"));
+    }
+
+    @Test
+    public void whenPostThenCode200() {
+        TopicService topicService = new TopicService();
+        String paramForPublisher = "temperature=18";
+        String paramForSubscriber1 = "client407";
+        topicService.process(
+                new Req("GET", "topic", "weather", paramForSubscriber1)
+        );
+        Resp result = topicService.process(
+                new Req("POST", "topic", "weather", paramForPublisher)
+        );
+        assertThat(result.getStatus(), is("200"));
+    }
 }
